@@ -8,15 +8,42 @@ const container = document.getElementById('tetris');
 container.style.setProperty('--blocks-high', blocksHigh);
 container.style.setProperty('--blocks-wide', blocksWide);
 
-class Block {
-  constructor(x=0, y=0, container){
-    this.el = document.createElement('div');
-    this.el.classList.add('block');
+class MovableObject {
+  init(x, y, container){
     this.x = x;
     this.y = y;
 
     if(container)
       this.addToDisplay(container);
+  }
+  canMoveDown(){
+    return this.y < blocksHigh - 1
+  }
+  moveDown(){
+    if(this.canMoveDown())
+      this.y++;
+  }
+  canMoveLeft(){
+    return this.x > 0;
+  }
+  moveLeft(){
+    if(this.canMoveLeft())
+      this.x--;
+  }
+  canMoveRight(){
+    return this.x < blocksWide - 1;
+  }
+  moveRight(){
+    if(this.canMoveRight())
+      this.x++;
+  }
+}
+class Block extends MovableObject {
+  constructor(...args){
+    super();
+    this.el = document.createElement('div');
+    this.el.classList.add('block');
+    this.init(...args);
 
     /* Notice that I created a DOM element, made some modifications to it, and
     returned it, but I did NOT add it to the container, so it will not be
@@ -41,63 +68,108 @@ class Block {
   set y(v){
     this.el.style.setProperty('--y-coord', v);
   }
-
-  moveDown(){
-    this.y++;
-  }
-  moveLeft(){
-    this.x--;
-  }
-  moveRight(){
-    this.x++;
-  }
-
   addToDisplay(container){
     container.appendChild(this.el);
     return this;
   }
 }
 
-const movingBlocks = [];
+class Shape extends MovableObject {
+  constructor(shape, ...args){
+    super();
+    this.blocks = [];
+    for(let [x,y] of shape){
+      let block = new Block(x,y);
+      block.localX = x;
+      block.localY = y;
+      this.blocks.push(block);
+    }
+    this.init(...args);
+  }
+  get x(){
+    return this._x;
+  }
+  set x(v){
+    this._x = v;
+    for(let block of this.blocks){
+      block.x = v + block.localX;
+    }
+  }
+  get y(){
+    return this._y;
+  }
+  set y(v){
+    this._y = v;
+    for(let block of this.blocks){
+      block.y = v + block.localY;
+    }
+  }
+  addToDisplay(container){
+    for(let block of this.blocks){
+      block.addToDisplay(container);
+    }
+  }
+  canMoveLeft(){
+    return this.blocks.every(block => block.canMoveLeft());
+  }
+  canMoveRight(){
+    return this.blocks.every(block => block.canMoveRight());
+  }
+  canMoveDown(){
+    return this.blocks.every(block => block.canMoveDown());
+  }
+
+  static square(...args){
+    return new Shape([ [0,-1],   [0,0],    [1,-1], [1,0] ],...args);
+  }
+  static straight(...args){
+    return new Shape([ [-1,0],   [0, 0],   [1, 0], [2, 0] ], ...args);
+  }
+  static L(...args){
+    return new Shape([ [-1,0],   [-1,-1],  [0,-1], [1,-1]], ...args);
+  }
+  static J(...args){
+    return new Shape([ [-1,-1],  [0,-1],   [1,-1], [1,0]], ...args);
+  }
+  static S(...args){
+    return new Shape([ [0,0],    [0,-1],   [-1,0], [1,-1]], ...args);
+  }
+  static Z(...args){
+    return new Shape([ [0,0],    [-1,-1],  [0,-1], [1,0] ], ...args);
+  }
+  static T(...args){
+    return new Shape([ [0,0],    [-1, 0],  [1, 0], [0,-1] ], ...args);
+  }
+}
+var currentShape = null;
 
 document.addEventListener('keydown', e => {
-  switch(e.which){
-    case 37: // Left arrow
-      for(let block of movingBlocks){
-        if(block.x > 0)
-          block.moveLeft();
-      }
-      break;
-    case 38: // Up arrow
-      // Do nothing right now, we'll add rotation later
-      break;
-    case 39: // Right arrow
-      for(let block of movingBlocks){
-        if(block.x < blocksWide - 1)
-          block.moveRight();
-      }
-      break;
-    case 40: // Down arrow
-      for(let block of movingBlocks){
-        if(block.y < blocksHigh - 1)
-          block.moveDown();
-      }
-      break;
-    default: break;
+  if(currentShape){
+    switch(e.which){
+      case 37: // Left arrow
+        currentShape.moveLeft();
+        break;
+      case 38: // Up arrow
+        // Do nothing right now, we'll add rotation later
+        break;
+      case 39: // Right arrow
+        currentShape.moveRight();
+        break;
+      case 40: // Down arrow
+        currentShape.moveDown();
+        break;
+      default: break;
+    }
   }
 });
 
 function gameLoop(){
-  for(let block of movingBlocks){
-    if(block.y < blocksHigh - 1)
-      block.moveDown();
-  }
+  currentShape.moveDown();
   setTimeout(gameLoop, moveTime);
 }
 
 /* Let's test these functions out */
 
-movingBlocks.push(new Block(2,2, container));
-movingBlocks.push(new Block(7,3, container));
+currentShape = Shape.T(0,0,container);
 
 gameLoop();
