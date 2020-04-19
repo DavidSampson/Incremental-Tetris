@@ -35,4 +35,41 @@
   a color, it allows us to see the shape of the viewing area when we look at
   this in the browser, to confirm that it is working properly. */
   background-color: blue;
+
+  /* Setting the positioning of the container to be relative, not so that I
+  can move the container around, but so that I can move the blocks inside of
+  it around as I like. An element with absolute positioning is positioned
+  based on its nearest positioned ancestor. By setting the position of the
+  container to relative, the blocks inside it can be absolutely positioned
+  and their position will be calculated based on the #tetris container, not
+  the screen as a whole. */
+  position: relative;
+}
+
+.block {
+  height: var(--block-size);
+  width: var(--block-size);
+
+  /* Setting position: absolute lets me control exactly where the block is
+  placed, ignoring any sibling elements, relative to the nearest positioned
+  ancestor (in this case, the #tetris container), using the top and left
+  properties. */
+  position: absolute;
+
+  /* Each block will have an --x-coord and --y-coord variable, controlling
+  where in the container it is. Here, --x-coord controls how far left or right
+  the block is, with 0 referring to the leftmost space, and 9 referring to the
+  10th space to the right of 0. The --y-coord controls the height, with 0
+  being the top, and *increasing* as you move down the screen. I've defined
+  the x and y coordinates to be zero here, but Javascript will overwrite this
+  value for each block. */
+  --x-coord: 0;
+  --y-coord: 0;
+
+  top: calc(var(--y-coord) * var(--block-size));
+  left: calc(var(--x-coord) * var(--block-size));
+
+  /* As with the container above, I'm giving the blocks a red background so I
+  can see them for testing purposes. */
+  background-color: red;
 }
