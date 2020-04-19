@@ -9,7 +9,7 @@ container.style.setProperty('--blocks-high', blocksHigh);
 container.style.setProperty('--blocks-wide', blocksWide);
 const startingCoordinates = [2,1];
 
-const restingBlocks = [];
+let restingBlocks = [];
 class MovableObject {
   init(x, y, container){
     this.x = x;
@@ -50,21 +50,11 @@ class Block extends MovableObject {
     this.el.classList.add('block');
     this.init(...args);
 
-    /* Notice that I created a DOM element, made some modifications to it, and
-    returned it, but I did NOT add it to the container, so it will not be
-    displayed at this point. This is important, as I want to be able to create
-    blocks without displaying them. */
   }
   get x(){
-     /* As far as javascript is concerned, CSS properties are strings, so we
-    use the getPropertyValue (the twin of setProperty from below) function and pass the
-    value through parseInt to convert it to a number. */
     return parseInt(this.el.style.getPropertyValue('--x-coord'));
   }
   set x(v){
-    /* We can manipulate CSS properties on a DOM element with
-    el.style.setProperty. Here we overwrite the --x-coord value
-    for a block */
     this.el.style.setProperty('--x-coord', v);
   }
   get y(){
@@ -162,7 +152,6 @@ class Shape extends MovableObject {
     return new Shape(locals, this.x, this.y);
   }
 
-
   static square(...args){
     return new Shape([ [0,-1],   [0,0],    [1,-1], [1,0] ],...args);
   }
@@ -245,25 +234,40 @@ document.addEventListener('keydown', e => {
     }
   }
 });
-function createRandomShape(container){
-
-}
+var score = 0;
 function gameLoop(){
-  if(currentShape){
-    if(currentShape.canMoveDown()){
-      currentShape.moveDown();
-    }
-    else {
-      for(let block of currentShape.blocks)
-        restingBlocks.push(block);
-      currentShape = Shape.random(...startingCoordinates, container);;
-    }
+  if(currentShape.canMoveDown()){
+    currentShape.moveDown();
+    setTimeout(gameLoop, moveTime);
   }
-  setTimeout(gameLoop, moveTime);
+  else {
+    for(let block of currentShape.blocks)
+      restingBlocks.push(block);
+
+    for(let i = 0; i < blocksHigh; i++){
+      let row =restingBlocks.filter(block => block.y === i);
+      if(row.length == blocksWide){
+        score++;
+        row.forEach(block => block.removeFromDisplay());
+        restingBlocks = restingBlocks.filter(b => !row.includes(b));
+        restingBlocks.forEach(block => {
+          if(block.y < i)
+            block.moveDown();
+        })
+      }
+    }
+
+    currentShape = Shape.random(...startingCoordinates, container);
+    if(currentShape.isValid())
+      setTimeout(gameLoop, moveTime);
+    else
+      alert(score);
+  }
+
 }
 
 /* Let's test these functions out */
 
-currentShape = Shape.straight(2,0,container);
+currentShape = Shape.random(...startingCoordinates, container);
 
 gameLoop();
