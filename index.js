@@ -42,8 +42,14 @@ class Block {
     this.el.style.setProperty('--y-coord', v);
   }
 
-  lower(){
+  moveDown(){
     this.y++;
+  }
+  moveLeft(){
+    this.x--;
+  }
+  moveRight(){
+    this.x++;
   }
 
   addToDisplay(container){
@@ -54,10 +60,37 @@ class Block {
 
 const movingBlocks = [];
 
+document.addEventListener('keydown', e => {
+  switch(e.which){
+    case 37: // Left arrow
+      for(let block of movingBlocks){
+        if(block.x > 0)
+          block.moveLeft();
+      }
+      break;
+    case 38: // Up arrow
+      // Do nothing right now, we'll add rotation later
+      break;
+    case 39: // Right arrow
+      for(let block of movingBlocks){
+        if(block.x < blocksWide - 1)
+          block.moveRight();
+      }
+      break;
+    case 40: // Down arrow
+      for(let block of movingBlocks){
+        if(block.y < blocksHigh - 1)
+          block.moveDown();
+      }
+      break;
+    default: break;
+  }
+});
+
 function gameLoop(){
   for(let block of movingBlocks){
     if(block.y < blocksHigh - 1)
-      block.lower();
+      block.moveDown();
   }
   setTimeout(gameLoop, moveTime);
 }
