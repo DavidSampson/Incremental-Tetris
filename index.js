@@ -72,6 +72,9 @@ class Block extends MovableObject {
     container.appendChild(this.el);
     return this;
   }
+  removeFromDisplay(){
+    this.el.remove();
+  }
 }
 
 class Shape extends MovableObject {
@@ -109,6 +112,11 @@ class Shape extends MovableObject {
       block.addToDisplay(container);
     }
   }
+  removeFromDisplay(){
+    for(let block of this.blocks){
+      block.removeFromDisplay();
+    }
+  }
   canMoveLeft(){
     return this.blocks.every(block => block.canMoveLeft());
   }
@@ -118,7 +126,13 @@ class Shape extends MovableObject {
   canMoveDown(){
     return this.blocks.every(block => block.canMoveDown());
   }
-
+  rotate(){
+    for(let block of this.blocks){
+      block.x += block.localY - block.localX;
+      block.y += -block.localX - block.localY;
+      ([block.localX, block.localY] = [block.localY, -block.localX]);
+    }
+  }
   static square(...args){
     return new Shape([ [0,-1],   [0,0],    [1,-1], [1,0] ],...args);
   }
@@ -150,7 +164,7 @@ document.addEventListener('keydown', e => {
         currentShape.moveLeft();
         break;
       case 38: // Up arrow
-        // Do nothing right now, we'll add rotation later
+        currentShape.rotate();
         break;
       case 39: // Right arrow
         currentShape.moveRight();
@@ -158,18 +172,47 @@ document.addEventListener('keydown', e => {
       case 40: // Down arrow
         currentShape.moveDown();
         break;
+      case 48:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.straight(0,0,container);
+        break;
+      case 49:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.square(0,0,container);
+        break;
+      case 50:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.L(0,0,container);
+        break;
+      case 51:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.J(0,0,container);
+        break;
+      case 52:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.S(0,0,container);
+        break;
+      case 53:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.Z(0,0,container);
+        break;
+      case 54:
+        currentShape.removeFromDisplay();
+        currentShape = Shape.T(0,0,container);
+        break;
       default: break;
     }
   }
 });
 
 function gameLoop(){
+  console.log(JSON.stringify(currentShape,null,2));
   currentShape.moveDown();
   setTimeout(gameLoop, moveTime);
 }
 
 /* Let's test these functions out */
 
-currentShape = Shape.T(0,0,container);
+currentShape = Shape.straight(0,0,container);
 
 gameLoop();
