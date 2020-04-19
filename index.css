@@ -1,0 +1,38 @@
+#tetris {
+  /* I'm creating a --view-height variable that will describe the total height
+  of the game display. Ordinarily, we'd just set the 'height' property, but I
+  need to do some calculations with the height value, and you can't use
+  property values in calculations, but you can use variables.
+
+  I think for now I want the playable area to fill up most, but not all of the
+  screen vertically, so I'll set the height to be 90% of the <v>iewer <h>eight
+  */
+  --view-height: 90vh;
+
+  /* How many blocks tall and wide the tetris playing area will be. 20x10
+  seems common enough, so we'll start with that. This may get overwritten in
+  Javascript code, but by putting a value here there will a fallback value
+  just in case. */
+  --blocks-high: 20;
+  --blocks-wide: 10;
+
+  /* The number of pixels tall each block should be is just the total height
+  of the viewer divided by the number of blocks. We can use calc() to do some
+  math, and var() to get the value from variables. We want the blocks to be
+  square, so the height and width will be the same, so I'm just calling this
+  --block-size instead of --block-height. */
+  --block-size: calc(var(--view-height) / var(--blocks-high));
+
+  /* Assigning our --view-height variable to control the height of the
+  viewing area. */
+  height: var(--view-height);
+
+  /* The width of the viewing area in pixels is just the width of each block
+  times the number of blocks wide that it should be. */
+  width: calc(var(--block-size) * var(--blocks-wide));
+
+  /* I don't know that I want the background to be blue yet, but by giving it
+  a color, it allows us to see the shape of the viewing area when we look at
+  this in the browser, to confirm that it is working properly. */
+  background-color: blue;
+}

@@ -1,0 +1,1 @@
+/* Empty for now, as we don't need any Javascript yet */
