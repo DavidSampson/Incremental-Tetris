@@ -7,7 +7,9 @@ so that we can manipulate it later. */
 const container = document.getElementById('tetris');
 container.style.setProperty('--blocks-high', blocksHigh);
 container.style.setProperty('--blocks-wide', blocksWide);
+const startingCoordinates = [2,1];
 
+const restingBlocks = [];
 class MovableObject {
   init(x, y, container){
     this.x = x;
@@ -17,25 +19,28 @@ class MovableObject {
       this.addToDisplay(container);
   }
   canMoveDown(){
-    return this.y < blocksHigh - 1
+    let next = this.copy();
+    next.moveDown();
+    return next.isValid();
   }
   moveDown(){
-    if(this.canMoveDown())
-      this.y++;
+    this.y++;
   }
   canMoveLeft(){
-    return this.x > 0;
+    let next = this.copy();
+    next.moveLeft();
+    return next.isValid();
   }
   moveLeft(){
-    if(this.canMoveLeft())
-      this.x--;
+    this.x--;
   }
   canMoveRight(){
-    return this.x < blocksWide - 1;
+    let next = this.copy();
+    next.moveRight();
+    return next.isValid();
   }
   moveRight(){
-    if(this.canMoveRight())
-      this.x++;
+    this.x++;
   }
 }
 class Block extends MovableObject {
@@ -74,6 +79,18 @@ class Block extends MovableObject {
   }
   removeFromDisplay(){
     this.el.remove();
+  }
+  isInBounds(){
+    return (this.x >= 0) && (this.y < blocksHigh) && (this.x < blocksWide);
+  }
+  isValid(){
+    return this.isInBounds() && restingBlocks.every(block => !this.intersects(block));
+  }
+  intersects(block){
+    return this.x == block.x && this.y == block.y;
+  }
+  copy(){
+    return new Block(this.x, this.y);
   }
 }
 
@@ -117,14 +134,14 @@ class Shape extends MovableObject {
       block.removeFromDisplay();
     }
   }
-  canMoveLeft(){
-    return this.blocks.every(block => block.canMoveLeft());
+  isValid(){
+    return this.blocks.every(block => block.isValid());
   }
-  canMoveRight(){
-    return this.blocks.every(block => block.canMoveRight());
-  }
-  canMoveDown(){
-    return this.blocks.every(block => block.canMoveDown());
+
+  canRotate(){
+    let next = this.copy();
+    next.rotate();
+    return next.isValid();
   }
   rotate(){
     for(let block of this.blocks){
@@ -133,6 +150,19 @@ class Shape extends MovableObject {
       ([block.localX, block.localY] = [block.localY, -block.localX]);
     }
   }
+  intersects(block){
+    return this.blocks.every(myBlock => !block.intersects(myBlock));
+  }
+
+  copy(){
+    let locals = [];
+    for(let block of this.blocks){
+      locals.push([block.localX, block.localY]);
+    }
+    return new Shape(locals, this.x, this.y);
+  }
+
+
   static square(...args){
     return new Shape([ [0,-1],   [0,0],    [1,-1], [1,0] ],...args);
   }
@@ -154,6 +184,17 @@ class Shape extends MovableObject {
   static T(...args){
     return new Shape([ [0,0],    [-1, 0],  [1, 0], [0,-1] ], ...args);
   }
+  static random(...args){
+    switch(Math.floor(Math.random() * 7)) {
+      case 0: return Shape.square(...args);
+      case 1: return Shape.straight(...args);
+      case 2: return Shape.L(...args);
+      case 3: return Shape.J(...args);
+      case 4: return Shape.S(...args);
+      case 5: return Shape.Z(...args);
+      case 6: return Shape.T(...args);
+    }
+  }
 }
 var currentShape = null;
 
@@ -161,58 +202,68 @@ document.addEventListener('keydown', e => {
   if(currentShape){
     switch(e.which){
       case 37: // Left arrow
-        currentShape.moveLeft();
+        if(currentShape.canMoveLeft()) currentShape.moveLeft();
         break;
       case 38: // Up arrow
-        currentShape.rotate();
+        if(currentShape.canRotate()) currentShape.rotate();
         break;
       case 39: // Right arrow
-        currentShape.moveRight();
+        if(currentShape.canMoveRight()) currentShape.moveRight();
         break;
       case 40: // Down arrow
-        currentShape.moveDown();
+        if(currentShape.canMoveDown()) currentShape.moveDown();
         break;
       case 48:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.straight(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.straight(...startingCoordinates,container);
         break;
       case 49:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.square(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.square(...startingCoordinates,container);
         break;
       case 50:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.L(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.L(...startingCoordinates,container);
         break;
       case 51:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.J(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.J(...startingCoordinates,container);
         break;
       case 52:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.S(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.S(...startingCoordinates,container);
         break;
       case 53:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.Z(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.Z(...startingCoordinates,container);
         break;
       case 54:
-        currentShape.removeFromDisplay();
-        currentShape = Shape.T(0,0,container);
+        if(currentShape) currentShape.removeFromDisplay();
+        currentShape = Shape.T(...startingCoordinates,container);
         break;
       default: break;
     }
   }
 });
+function createRandomShape(container){
 
+}
 function gameLoop(){
-  console.log(JSON.stringify(currentShape,null,2));
-  currentShape.moveDown();
+  if(currentShape){
+    if(currentShape.canMoveDown()){
+      currentShape.moveDown();
+    }
+    else {
+      for(let block of currentShape.blocks)
+        restingBlocks.push(block);
+      currentShape = Shape.random(...startingCoordinates, container);;
+    }
+  }
   setTimeout(gameLoop, moveTime);
 }
 
 /* Let's test these functions out */
 
-currentShape = Shape.straight(0,0,container);
+currentShape = Shape.straight(2,0,container);
 
 gameLoop();
